@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 data = pd.read_csv("processed.cleveland.csv", na_values=['?'])
 
 clean_data = data.fillna(data.median(numeric_only=True))
-#clean_data = data.dropna()
 
 clean_data['num_binary'] = (clean_data['num'] > 0).astype(int)
 clean_data = pd.get_dummies(clean_data, columns=["cp", "slope", "thal", "restecg"], drop_first=True)
@@ -22,6 +21,7 @@ strong_corr = correlation[correlation > 0.3].drop(labels=['num', 'num_binary'], 
 X = clean_data[strong_corr.index]
 Y = (clean_data['num_binary'])
 mean_accuracies = []
+total_conf_matrix = np.zeros((2, 2))
 
 for x in range(1, 10):
     tesT_size = x/10
@@ -36,21 +36,26 @@ for x in range(1, 10):
 
         Y_pred = log_regression.predict(X_test)
 
-        #accuracy = accuracy_score(Y_test, Y_pred)
         accuracies.append(accuracy_score(Y_test, Y_pred))
-        #conf_matrix = confusion_matrix(Y_test, Y_pred)
-        #class_report = classification_report(Y_test, Y_pred)
+        if x == 1:
+            cm = confusion_matrix(Y_test, Y_pred)
+            total_conf_matrix += cm
+
+            if seed == 2:
+                class_report = classification_report(Y_test, Y_pred)
+                print(class_report)
 
     mean_accuracy = np.mean(accuracies)
     mean_accuracies.append(mean_accuracy)
 
     print(f"{tesT_size} Accuracy: {np.mean(accuracies)}")
 
+print(total_conf_matrix)
 
 test_sizes = [1-(x/10) for x in range(1, 10)]
 plt.figure(figsize=(8, 5))
 plt.plot(test_sizes, mean_accuracies, marker='o', linestyle='-', color='b')
-plt.title('Test Seti Oranı vs Ortalama Doğruluk')
+plt.title('Eğitim Seti Oranı vs Ortalama Doğruluk')
 plt.xlabel('Eğitim Seti Oranı')
 plt.ylabel('Ortalama Doğruluk')
 plt.grid(True)
